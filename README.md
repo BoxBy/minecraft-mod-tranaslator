@@ -1,5 +1,38 @@
-# minecraft Mod Translator
-## (부제)영어가 딸려서 만든 모드 번역기
+# minecraft-Mod-Translator
+
+[lazylee-l2i/minecraft-Mod-Translator](https://github.com/lazylee-l2i/minecraft-Mod-Translator)를 기반으로 개선하였습니다
+
+# 개선사항
+
+1. translated_mods 폴더는 이제 자동으로 만들어지며, 번역된 모드 파일이 이미 존재할 경우, 다시 번역하지 않습니다.
+2. 딥러닝 기반 번역기인 [DeepL](https://www.deepl.com/translator)에 대한 지원을 추가하였습니다.  
+현재 DeepL은 한국에 API가 제공되지 않아, 크롤링을 통해 지원합니다.  
+3. Google Translate와 Papago Translate 버전을 통합하였습니다.  
+4. 이제 어떤 문장이 번역에 실패했는지 알 수 있습니다.  
+5. 번역할 모드를 선택할 수 있도록 하였습니다.  
+--mode 옵션을 통해 선택할 수 있으며, google, papago, deepl, crawl 4가지 모드가 있습니다.
+6. 기존 깃허브와 동일하게, MIT 라이센스를 적용하였습니다.  
+배포/수정/상업적 이용 등 모든 용도로 자유롭게 사용하실 수 있습니다.
+
+# Requirements
+1. python 3.7 이상  
+2. commentjson==0.9.0  
+3. googletrans==4.0.0rc1  
+4. selenium==3.141.0  
+5. tqdm==4.62.3  
+6. beautifulsoup4==4.10.0  
+7. chrome driver가 필요합니다. [다운로드](https://chromedriver.chromium.org/downloads)
+
+# 사용방법
+1. **mod**폴더에 번역하고자 하는 jar 모드 파일을 넣습니다.
+2. (**cmd** or **powershell**) python main.py --mode [google, papago, deepl, crawl]
+3. 열심히 기다립니다.
+4. **translated_mod**에 번역된 jar 모드 파일이 있을겁니다.
+5. 이제 그 모드파일을 가져다 적용하고 즐기세요!
+
+
+# minecraft Mod Translator  
+## (부제)영어가 딸려서 만든 모드 번역기  
 
 1. `모드`가 1개면 그냥 하겠는데 **pam's harvest**하다가 능지가 딸려 현타와서 만들었습니다.  
 2. 해당 프로그램은 2가지 버전이 존재합니다. `구글 버전`과 `Papago 버전`입니다.  
