@@ -9,7 +9,11 @@ from tqdm import tqdm
 import os
 import argparse
 from translator import init_api, translate_papago
+import time
 
+from deepl import DeepLCLI
+
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -23,7 +27,7 @@ headers = {
 }
 
 parser = argparse.ArgumentParser(description='Minecraft Mod Translator')
-parser.add_argument('-m', '--mode', type=str, default='google', choices=['google', 'papago', 'deepl', 'crawl'], help='one of google, papago, deepl, crawl')
+parser.add_argument('-m', '--mode', type=str, default='google', choices=['google', 'papago', 'deepl', 'crawl', 'cli'], help='one of google, papago, deepl, crawl, cli')
 
 translated = './translated_mods'
 
@@ -44,17 +48,20 @@ class JsonExporter:
         elif self.mode == 'deepl':
             self.url = 'one of deepl url(DeepL or rapidapi)'
         elif self.mode == 'crawl':
-            self.driver = webdriver.Chrome('./chromedriver.exe')
+            self.driver = webdriver.Chrome(ChromeDriverManager().install())
             self.url = 'https://www.deepl.com/ko/translator#en/ko/'
             self.wait = WebDriverWait(self.driver, 4)
             self.source = '#panelTranslateText > div.lmt__sides_container > div.lmt__sides_wrapper > section.lmt__side_container.lmt__side_container--target > div.lmt__textarea_container.lmt__raise_alternatives_placement > div.lmt__inner_textarea_container > d-textarea > div > p > span'
             self.source_alter = '#panelTranslateText > div.lmt__sides_container > div.lmt__sides_wrapper > section.lmt__side_container.lmt__side_container--target > div.lmt__textarea_container > div.lmt__inner_textarea_container > d-textarea > div > p > span'
+        elif self.mode =='cli':
+            self.translator = DeepLCLI('en', 'ko')
 
         self.translate = {
             'google': self.translate_google,
             'deepl': self.translate_deepl,
             'papago': self.translate_papago,
-            'crawl': self.translate_crawl
+            'crawl': self.translate_crawl,
+            'cli': self.translate_cli
         }
 
     def oneFile(self, _file):
@@ -65,7 +72,6 @@ class JsonExporter:
         result_json = self.translate[self.mode](_json_data=json_file)
         self.saveJar(result_json, _file, lang_path)
         print(f"Translated {_file}")
-        quit()
 
     def allFile(self):
         for count, file in enumerate(self.mod_list):
@@ -102,19 +108,28 @@ class JsonExporter:
                 return json_file ,_file
         print(f"Here is no Language file at {jar_file}")
         return None, None
+    
+    def translate_cli(self, _json_data : dict="Json File"):
+        result = _json_data.copy()
+        for _key in _json_data.keys():
+            try:
+                result[_key] = self.translator.translate(_json_data[_key])
+            except Exception as e:
+                print(f'{result[_key]} 를 번역하는 도중 문제가 생겼습니다.')
+                print(e)
+                result[_key] = _json_data[_key]
+        return result
 
     def translate_google(self, _json_data :dict="Json File"):
         result = _json_data.copy()
         for _key in _json_data.keys():
             try:
-                if self.mode == 'google':
-                    result[_key] = self.translator.translate(_json_data[_key], src="en", dest="ko").text
+                result[_key] = self.translator.translate(_json_data[_key], src="en", dest="ko").text
             except Exception as e:
                 print(f"{result[_key]} 를 번역하는 도중 문제가 생겼습니다.")
                 print(e)
                 print("아 걱정마세요. 평범한 에러메세지입니다. 무료버전의 한계니 그냥 넘어가도록하죠.")
                 result[_key] = _json_data[_key]
-            print(result[_key])
         return result
     
     def translate_deepl(self, _json_data :dict="Json File"):
@@ -125,6 +140,7 @@ class JsonExporter:
         }
         result = _json_data.copy()
         for _key in _json_data.keys():
+            payload["text"] = _json_data[_key]
             try:
                 result[_key] = requests.post(self.url, data=payload, headers=headers).text
             except:
@@ -141,6 +157,7 @@ class JsonExporter:
             self.driver.get(url)
             try:
                 self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, self.source)))
+                time.sleep(0.2)
             except:
                 pass
 
