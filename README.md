@@ -22,7 +22,8 @@
 5. tqdm==4.62.3  
 6. beautifulsoup4==4.10.0  
 ~~7. chrome driver가 필요합니다. [다운로드](https://chromedriver.chromium.org/downloads)~~ webdriver-manager 라이브러리 추가하여 요구하지 않습니다  
-7. webdriver-manager
+7. webdriver-manager  
+8. deepl-cli  
 
 # 사용방법
 1. **mod**폴더에 번역하고자 하는 jar 모드 파일을 넣습니다.
