@@ -10,7 +10,7 @@
 3. Google Translate와 Papago Translate 버전을 통합하였습니다.  
 4. 이제 어떤 문장이 번역에 실패했는지 알 수 있습니다.  
 5. 번역할 모드를 선택할 수 있도록 하였습니다.  
---mode 옵션을 통해 선택할 수 있으며, google, papago, deepl, crawl 4가지 모드가 있습니다.
+--mode 옵션을 통해 선택할 수 있으며, google, papago, deepl, crawl, cli 5가지 모드가 있습니다.
 6. 기존 깃허브와 동일하게, MIT 라이센스를 적용하였습니다.  
 배포/수정/상업적 이용 등 모든 용도로 자유롭게 사용하실 수 있습니다.
 
@@ -21,7 +21,9 @@
 4. selenium==3.141.0  
 5. tqdm==4.62.3  
 6. beautifulsoup4==4.10.0  
-~~7. chrome driver가 필요합니다. [다운로드](https://chromedriver.chromium.org/downloads)~~ webdriver-manager 라이브러리 추가하여 요구하지 않습니다
+~~7. chrome driver가 필요합니다. [다운로드](https://chromedriver.chromium.org/downloads)~~ webdriver-manager 라이브러리 추가하여 요구하지 않습니다  
+7. webdriver-manager  
+8. deepl-cli  
 
 # 사용방법
 1. **mod**폴더에 번역하고자 하는 jar 모드 파일을 넣습니다.
