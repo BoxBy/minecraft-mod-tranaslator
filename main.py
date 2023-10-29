@@ -158,7 +158,7 @@ class JsonExporter:
         result = _json_data.copy()
         for _key in pbar:
             try:
-                result[_key] = self.translator.translate_text(_json_data[_key], target_lang="KR").text
+                result[_key] = self.translator.translate_text(_json_data[_key], target_lang="KO").text
             except Exception as e:
                 print(f"{result[_key]} 를 번역하는 도중 문제가 생겼습니다.")
                 print(e)
