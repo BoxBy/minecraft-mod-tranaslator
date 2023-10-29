@@ -155,4 +155,5 @@ cython_debug/
 .jar
 mods/
 translated_mods/
+temp/
 *.ipynb

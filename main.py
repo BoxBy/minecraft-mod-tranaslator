@@ -11,7 +11,7 @@ import argparse
 from translator import init_api, translate_papago
 import time
 
-from deepl import DeepLCLI
+import deepl
 
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
@@ -20,6 +20,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+auth_key = "" # Your DeepL API Key
+
 headers = {
 	"content-type": "application/json",
 	"X-RapidAPI-Key": "Your API Key",
@@ -27,7 +29,7 @@ headers = {
 }
 
 parser = argparse.ArgumentParser(description='Minecraft Mod Translator')
-parser.add_argument('-m', '--mode', type=str, default='google', choices=['google', 'papago', 'deepl', 'crawl', 'cli'], help='one of google, papago, deepl, crawl, cli')
+parser.add_argument('-m', '--mode', type=str, default='cli', choices=['google', 'papago', 'deepl', 'crawl', 'cli'], help='one of google, papago, deepl, crawl, cli')
 
 translated = './translated_mods'
 
@@ -36,6 +38,8 @@ class JsonExporter:
         self.mod_list = glob.glob("./mods/*.jar")
         if os.path.isdir(translated) is False:
             os.mkdir(translated)
+        if os.path.isdir('./temp') is False:
+            os.mkdir('./temp')
 
         self.mode = mode
         self.translated_list = glob.glob(translated + "/*.jar")
@@ -45,23 +49,20 @@ class JsonExporter:
             self.translator = googletrans.Translator()
         elif self.mode == 'papago':
             self.request = init_api()
-        elif self.mode == 'deepl':
-            self.url = 'one of deepl url(DeepL or rapidapi)'
         elif self.mode == 'crawl':
             self.driver = webdriver.Chrome(ChromeDriverManager().install())
             self.url = 'https://www.deepl.com/ko/translator#en/ko/'
             self.wait = WebDriverWait(self.driver, 4)
             self.source = '#panelTranslateText > div.lmt__sides_container > div.lmt__sides_wrapper > section.lmt__side_container.lmt__side_container--target > div.lmt__textarea_container.lmt__raise_alternatives_placement > div.lmt__inner_textarea_container > d-textarea > div > p > span'
             self.source_alter = '#panelTranslateText > div.lmt__sides_container > div.lmt__sides_wrapper > section.lmt__side_container.lmt__side_container--target > div.lmt__textarea_container > div.lmt__inner_textarea_container > d-textarea > div > p > span'
-        elif self.mode =='cli':
-            self.translator = DeepLCLI('en', 'ko')
+        elif self.mode =='deepl':
+            self.translator = deepl.Translator(auth_key)
 
         self.translate = {
             'google': self.translate_google,
             'deepl': self.translate_deepl,
             'papago': self.translate_papago,
             'crawl': self.translate_crawl,
-            'cli': self.translate_cli
         }
 
     def oneFile(self, _file):
@@ -69,21 +70,33 @@ class JsonExporter:
         if json_file is None:
             print(lang_path)
             return None
-        result_json = self.translate[self.mode](_json_data=json_file)
+        pbar = tqdm(json_file.keys(),
+                    desc=f'Translate {_file}',
+                    position=1,
+                    leave=False
+                    )
+        result_json = self.translate[self.mode](pbar, _json_data=json_file)
         self.saveJar(result_json, _file, lang_path)
         print(f"Translated {_file}")
 
     def allFile(self):
-        for count, file in enumerate(self.mod_list):
-            print(f"{count+1}/{len(self.mod_list)} {file}")
+        pbar = tqdm(self.mod_list,
+                    desc="desc",
+                    position=0)
+        for file in pbar:
+            pbar.set_description(f'Current File: {file}')
 
             zip_path = file.replace("mods", "translated_mods")
+            copy_path = file.replace("mods", "temp")
             zip_path = zip_path.replace(".jar", "_korean.jar")
             if zip_path in self.translated_list:
                 print(f'{zip_path} is already translated')
                 continue
-            shutil.copy(file, zip_path)
-            translate = self.oneFile(zip_path)
+            else :
+                shutil.copy(file, copy_path)
+            translate = self.oneFile(copy_path)
+            shutil.copy(copy_path, zip_path)
+            os.remove(copy_path)
             if translate is None:
                 continue
 
@@ -109,20 +122,28 @@ class JsonExporter:
         print(f"Here is no Language file at {jar_file}")
         return None, None
     
-    def translate_cli(self, _json_data : dict="Json File"):
+    def translate_cli(self, pbar, _json_data : dict="Json File"):
         result = _json_data.copy()
-        for _key in _json_data.keys():
+        error_count=0
+        for _key in pbar:
             try:
                 result[_key] = self.translator.translate(_json_data[_key])
+                error_count=0
+                print(f' translate {_json_data[_key]} to {result[_key]}')
             except Exception as e:
                 print(f'{result[_key]} 를 번역하는 도중 문제가 생겼습니다.')
                 print(e)
                 result[_key] = _json_data[_key]
+                error_count+=1
+                if error_count > 10:
+                    print("10번 이상 에러가 발생하여 번역을 종료합니다.")
+                    quit()
+
         return result
 
-    def translate_google(self, _json_data :dict="Json File"):
+    def translate_google(self, pbar, _json_data :dict="Json File"):
         result = _json_data.copy()
-        for _key in _json_data.keys():
+        for _key in pbar:
             try:
                 result[_key] = self.translator.translate(_json_data[_key], src="en", dest="ko").text
             except Exception as e:
@@ -132,26 +153,21 @@ class JsonExporter:
                 result[_key] = _json_data[_key]
         return result
     
-    def translate_deepl(self, _json_data :dict="Json File"):
-        payload = {
-            "text": "This is a example text for translation.",
-            "source": "EN",
-            "target": "KO"
-        }
+    def translate_deepl(self, pbar, _json_data :dict="Json File"):
         result = _json_data.copy()
-        for _key in _json_data.keys():
-            payload["text"] = _json_data[_key]
+        for _key in pbar:
             try:
-                result[_key] = requests.post(self.url, data=payload, headers=headers).text
-            except:
+                result[_key] = self.translator.translate(_json_data[_key], target_lang="KR").text
+            except Exception as e:
                 print(f"{result[_key]} 를 번역하는 도중 문제가 생겼습니다.")
+                print(e)
                 print("아 걱정마세요. 평범한 에러메세지입니다. 무료버전의 한계니 그냥 넘어가도록하죠.")
                 result[_key] = _json_data[_key]
         return result
     
-    def translate_crawl(self, _json_data :dict="Json File"):
+    def translate_crawl(self, pbar, _json_data :dict="Json File"):
         result = _json_data.copy()
-        for _key in _json_data.keys():
+        for _key in pbar:
             url = self.url + result[_key]
 
             self.driver.get(url)
@@ -173,9 +189,9 @@ class JsonExporter:
                     result[_key] = _json_data[_key]
         return result
 
-    def translate_papago(self, _json_data :dict="Json File"):
+    def translate_papago(self, pbar, _json_data :dict="Json File"):
         result = _json_data.copy()
-        for _key in _json_data.keys():
+        for _key in pbar:
             result[_key] = translate_papago(self.request, _json_data[_key])
             if result[_key] == -1:
                 print("Something wrong... so.. just pass..")
