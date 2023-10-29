@@ -32,9 +32,6 @@ parser = argparse.ArgumentParser(description='Minecraft Mod Translator')
 parser.add_argument('-m', '--mode', type=str, default='cli', choices=['google', 'papago', 'deepl', 'crawl'], help='one of google, papago, deepl, crawl')
 parser.add_argument('api_key', type=str, default=None, help='API Key for DeepL')
 
-if parser.api_key is not None:
-    auth_key = parser.api_key
-
 translated = './translated_mods'
 
 class JsonExporter:
@@ -161,7 +158,7 @@ class JsonExporter:
         result = _json_data.copy()
         for _key in pbar:
             try:
-                result[_key] = self.translator.translate(_json_data[_key], target_lang="KR").text
+                result[_key] = self.translator.translate_text(_json_data[_key], target_lang="KR").text
             except Exception as e:
                 print(f"{result[_key]} 를 번역하는 도중 문제가 생겼습니다.")
                 print(e)
@@ -215,4 +212,6 @@ def run(args):
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    if args.api_key is not None:
+        auth_key = args.api_key
     run(args)
