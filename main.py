@@ -29,7 +29,11 @@ headers = {
 }
 
 parser = argparse.ArgumentParser(description='Minecraft Mod Translator')
-parser.add_argument('-m', '--mode', type=str, default='cli', choices=['google', 'papago', 'deepl', 'crawl', 'cli'], help='one of google, papago, deepl, crawl, cli')
+parser.add_argument('-m', '--mode', type=str, default='cli', choices=['google', 'papago', 'deepl', 'crawl'], help='one of google, papago, deepl, crawl')
+parser.add_argument('api_key', type=str, default=None, help='API Key for DeepL')
+
+if parser.api_key is not None:
+    auth_key = parser.api_key
 
 translated = './translated_mods'
 
